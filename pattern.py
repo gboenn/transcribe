@@ -1,3 +1,7 @@
+# Copyright (c) 2025 Georg Boenn
+# Attribution-NonCommercial-ShareAlike 4.0 International
+# See license.txt in the transcribe distribution
+
 from catalog import *
 
 def remove_dups (reslist):

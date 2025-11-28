@@ -1,23 +1,18 @@
+# Copyright (c) 2025 Georg Boenn
+# Attribution-NonCommercial-ShareAlike 4.0 International
+# See license.txt in the transcribe distribution
+
 import concurrent.futures
 import math
 import sys
 import time
 
 
-# this script grouping_dev9.py is used in conjunction with grouping_dev7.py in order to
-# analyse the same piece but from a different performance
-# the reference analysis serves as a 'memory' in order to help decisions to be made in the quantization process, for example, when there are two competing solutions.
-
 # it is sufficient to understand compound rhythms in order to solve the quantization problem
 # the problem is to know the local tempo of a piece and to predict when the next downbeat is going to happen
 # the downbeat prediction can be achieved by successfully transcribing the compound rhythmic pattern that occurs within a bar. The local tempo within that bar can then be calculated easily by using the time that has elapsed between the previous downbeat and the next downbeat, whose position in time is a result of a succesful quantization of the compund rhythm within the bar, and the mapping of the quantized rhythm back to its original occurence on the timeline.
 # one can build a memory, or a database of compound rhythms, based on previous results of transcribing the same piece of music.
 
-
-#we also will create a program that can compare two outcomes of analysis with each other and to document their differences and communalities
-
-#import numpy as np
-#from primes_tab import *
 from float_to_ratio_func import *
 from fareytab import *
 from digest import *
@@ -26,46 +21,6 @@ from permut_lists import *
 from cost import *
 from transcription import *
 from pattern import *
-
-#analysis of a text file with a list of note onsets (one per line)
-#outputs groupings of onsets (duration classes) 
-#a new duration class is established if the difference between two durations is greater than 0.1 seconds (100 ms)
-#100 ms is considered to be the smallest absolute time of a subdivision of a beat
-# this value might be lower for ornaments such as trills
-# trills are likely to be executed metrically if they occur in a metric context
-# e.g. piano left hand accompinement versus right hand ornament
-#normalizes duration classes
-#takes mean of duration classes
-#converts mean decimals to fractions (continuous fraction expansion)
-#quantizes mean decimals to farey sequence ratios (F_200) with minimum complexity (modified Barlow's digestibility)
-#new version uses a list of durations and subdivision based on one quarter note = 1/3 as a reference
-
-#1. metric hypothesis: ternary or binary meter?
-#2. obtain first full bar
-#3. measure bpm
-#4. use bpm for gauging following measurements
-#5. too much deviation leads to higher cost of result
-#6. select results that are close to previous bpms and have close euclidean distance from performed patterns
-
-# backtracking does not work
-
-# a new fitness parameter is very helpful
-# possible breakthrough
-# q.append(q[5] * (math.fabs (1. - q[7])))
-# euclidean distance * abs ( 1. - bpmratio)
-# bpmratio as ratio of current bpm / previous bpm
-
-# Bach C major prelude, F-sharp major prelude with trills, Beethoven with appogiaturas in different versions
-# all successfully transcribed!
-
-# input onset times detected by aubioonset program (Brossier)
-# after this, this program is almost fully automatic
-
-# it needs only a small list of rhythmic patterns that are contained in the piece
-# a meter decision is given, either ternary (3/4, 6/8, 9/8) or binary meters (2/4, 4/4) are possible
-# no tempo estimate, all downbeats are detected automatically, and beats detected as side effect
-# sometimes in Beethoven, the program falls into double tempo
-
 
 onsetsA = []
 threshold = 0.01

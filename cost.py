@@ -1,3 +1,7 @@
+# Copyright (c) 2025 Georg Boenn
+# Attribution-NonCommercial-ShareAlike 4.0 International
+# See license.txt in the transcribe distribution
+
 from math import sqrt, fabs
 from digest import *
 from float_to_ratio_func import *

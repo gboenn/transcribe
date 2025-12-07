@@ -176,7 +176,9 @@ durations_pattern = ['I', '.', '[-]'] #son clave
 #durations_pattern = ['H', 'I', '.']
 #durations_pattern = ['H~I', '.']
 #durations_pattern = ['[.]', '.', '[-]', 'I', 'H'] # max onsets 9 for 4/4 meter
-durations_pattern = ['[.]', '.', '[-]', 'I']
+durations_pattern = ['[.]', '.', '[-]', 'I'] # tha
+durations_pattern = ['[.]', '.', '[-]', '-', 'I', 'H'] # tha dec 6
+
 duration_ar = transcribe_back (durations_pattern, ternary_flag)
 #print (duration_ar)
 

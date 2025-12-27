@@ -497,7 +497,7 @@ def main ():
                 print (" bpm: ", q[6], " bpmratio: ", q[7], " prevbpm: ", q[8], " fitness: ", q[9])
                 print ("bpm change: ", q[10])
 
-
+################ Dec 11: q[2] and q[3] of selected result to be used to make predictopn about the next bars' downbeats
         #use sort for efficiency: .sort(key=lambda x: x[5])
         q_results.sort(key=lambda x: x[5]) # sort after euclid dist.
         q_results.sort(key=lambda x: x[9]) # sort after new fitness parameter
@@ -571,8 +571,22 @@ def main ():
             anafile.write (str(qr[3])) # next downbeat time in sec
             anafile.write ("\t")
             anafile.write (str(qr[7])) # current bpm / previous bpm
+            anafile.write ("\t")
+            ## create here a global list of future downbeats in seconds
+        ## i1 + (1-bar period), i1 + 2(1-bar period), ...
+        ## 1-bar period := 60./prevbpm * 4 (if binary) or * 3 (if ternary)
+            future_ones = []
+            cur_one = onsetsA[i1] #i1 is an index into the global onset list, i.e. the current beat one
+            if (ternary):
+                future_ones = [(x)*(60./qr[6]*3)+cur_one for x in range(4)]
+            else:
+                future_ones = [(x)*(60./qr[6]*4)+cur_one for x in range(4)]
+            # future_ones[1] and future_ones[2] constitutes a prediction
+            # of the time-frame of the next bar, which is going to be tried for quantization
+            # with q_process
+            anafile.write (str(future_ones)) 
             anafile.write ("\n")
-            
+
             n_onsets = transcribe_back(qr[4], ternary)
             
             for k in n_onsets:
@@ -588,6 +602,7 @@ def main ():
             #    start_bpm = qr[6]
             i1 = qr[2]
             prevbpm = qr[6]
+        
         else:
             print ("no results - finished analysis.")
             break

@@ -17,6 +17,7 @@ def flatten_list (input_list):
 #--------------------------------------------------------------------------------
 
 pat_catalog = {
+        'tha3' : tha3,
     'tha2' : tha2,
     'tha': tha,
     'bach_prel_1_gould': bach_prel_1_gould,

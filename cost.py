@@ -1,3 +1,4 @@
+# cost.py
 # Copyright (c) 2025 Georg Boenn
 # Attribution-NonCommercial-ShareAlike 4.0 International
 # See license.txt in the transcribe distribution
@@ -70,7 +71,7 @@ def cost_fun_harm3(a):
     # uses Barlow's Digestibility function
     # This is my rhythmic impact measure RIM
     # NEW: this version of the function is now symmetric around x = 0.5
-    # NEW gives absolute rim val
+    # NEW gives absolute rim val absRIM
     temp = []
     col = 0.
     dig = 0.
@@ -114,6 +115,17 @@ def cost_fun_ratios(a):
             col = col + (1. / r)
     return col
 
+def cost_fun_ratios3(a):
+    # ratios between durations
+    col = 0.
+    for k in range(len(a)-1):
+        ratio = fabs(a[k]) / fabs(a[k+1])
+        frac = float2ratio(ratio)
+        r = fabs(digest(frac[0])) + digest(frac[1])
+#        print (ratio, r)
+        col = col + r
+    return col
+
 def cost_fun_ratios2(a):
     # ratios between durations
     col = 0.
@@ -145,28 +157,28 @@ def cost_fullbar(a):
     return col
 
 
-def beat_align_test (d):
-    accum = [0.]
-    iacc = []
-    weight = 0.
-    for t in d:
-        last = accum[-1]
-        accum.append (fabs(t)+last)
-    for t in accum:
-        iacc.append (int(t * 10000.))
+# def beat_align_test (d):
+#     accum = [0.]
+#     iacc = []
+#     weight = 0.
+#     for t in d:
+#         last = accum[-1]
+#         accum.append (fabs(t)+last)
+#     for t in accum:
+#         iacc.append (int(t * 10000.))
 
-    for t in iacc:
-        if (t == 3333 or t == 6666): #1/3 2/3
-            weight += 1.
-        elif (t == 5000 or t == 4999): #1/2
-            weight += 0.5
-        elif (t == 8332 or t == 8333): #5/6
-            weight += 0.5
-        elif (t == 1662 or t == 1666): #1/6 new
-            weight += 0.5
+#     for t in iacc:
+#         if (t == 3333 or t == 6666): #1/3 2/3
+#             weight += 1.
+#         elif (t == 5000 or t == 4999): #1/2
+#             weight += 0.5
+#         elif (t == 8332 or t == 8333): #5/6
+#             weight += 0.5
+#         elif (t == 1662 or t == 1666): #1/6 new
+#             weight += 0.5
 
-#    print (iacc, weight)
-    return weight
+# #    print (iacc, weight)
+#     return weight
     
 def beat_align_test2 (d, s):
     accum = [0.]
@@ -260,40 +272,40 @@ def beat_align_test2B (d, s):
     return weight
 
 
-def beat_align_test3 (d, s):
-    accum = [0.]
-    iacc = []
-    weight = 0.
-    for t in d:
-        last = accum[-1]
-        accum.append (fabs(t)+last)
-    for t in accum:
-        iacc.append (int(t * 10000.))
-#    print (iacc)
-    for i in range(len (iacc)):
-        t = iacc[i]
-        r = ""
+# def beat_align_test3 (d, s):
+#     accum = [0.]
+#     iacc = []
+#     weight = 0.
+#     for t in d:
+#         last = accum[-1]
+#         accum.append (fabs(t)+last)
+#     for t in accum:
+#         iacc.append (int(t * 10000.))
+# #    print (iacc)
+#     for i in range(len (iacc)):
+#         t = iacc[i]
+#         r = ""
         
-        if (i < len(s)):
-            r = s[i]
-        shortlong = 1.
-        if (i < (len(d) - 1)):
-            shortlong = d[i] - d[i+1]
-        if (t == 0 or t == 3333 or t == 6666): #1/3 2/3
-            weight += 1.
-            if (r == "H"):
-                weight += 0.2
-            if (shortlong < 0.):
-                weight -= 0.5
-#        elif (t == 5000 or t == 4999): #1/2
-#            weight += 0 #0.25 ???
-        elif (t == 8332 or t == 8333): #5/6
-            weight += 0.25  # test ######## was 0.75 then 0.5
-        elif (t == 1667 or t == 1666): #1/6 new
-            weight += 0.25 # test ######## was 0.75
-            #new34_1 0.05 new34_2 0.25
+#         if (i < len(s)):
+#             r = s[i]
+#         shortlong = 1.
+#         if (i < (len(d) - 1)):
+#             shortlong = d[i] - d[i+1]
+#         if (t == 0 or t == 3333 or t == 6666): #1/3 2/3
+#             weight += 1.
+#             if (r == "H"):
+#                 weight += 0.2
+#             if (shortlong < 0.):
+#                 weight -= 0.5
+# #        elif (t == 5000 or t == 4999): #1/2
+# #            weight += 0 #0.25 ???
+#         elif (t == 8332 or t == 8333): #5/6
+#             weight += 0.25  # test ######## was 0.75 then 0.5
+#         elif (t == 1667 or t == 1666): #1/6 new
+#             weight += 0.25 # test ######## was 0.75
+#             #new34_1 0.05 new34_2 0.25
     
-    return weight
+#     return weight
 
 def beat_align_test5 (d):
     accum = [0.]

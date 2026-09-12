@@ -7,6 +7,7 @@ import math
 import sys
 import time
 
+import cProfile
 
 # it is sufficient to understand compound rhythms in order to solve the quantization problem
 # the problem is to know the local tempo of a piece and to predict when the next downbeat is going to happen
@@ -23,8 +24,6 @@ from transcription import *
 from pattern import *
 
 onsetsA = []
-threshold = 0.01
-ternary = 0
 
 def find_pattern_in_memory (s, memory, bar):
     b = eval(memory[bar][3])
@@ -42,18 +41,17 @@ def downbeat_time (onsetlist, index):
 
 
 def quantize(markers):
-    global threshold
-    global ternary
     # qdebug = 0
     n_ = markers[0]
     onsets = markers[1] #onsetsA[i1:i2]
     onsets0 = []
     durations = []
-
-    #print "onsets:"
-    #print onsets
-    #print "duration ratios from onsets:"
-    #print dur_ratios(onsets)
+    threshold = markers.pop()
+    ternary = markers.pop()
+    # print ("onsets:")
+    # print (onsets)
+    # print ("duration ratios from onsets:")
+    # print (dur_ratios(onsets))
 
     sum_durs = 0.
 
@@ -93,8 +91,8 @@ def quantize(markers):
             groups.append([])
             groups[gc].append(o2)
 
-    #print "groups:"
-    #print groups, " has ", gc+1, " groups." 
+    #print ("groups:")
+    #print (groups, " has ", gc+1, " groups.") 
 
 
     durclasses = []
@@ -120,8 +118,8 @@ def quantize(markers):
     #print "normalized classes:"
     #print norm_durclasses            
     #print length_durclasses
-    #print "order of classes"
-    #print order_classes
+    #print ("order of classes")
+    #print (order_classes)
 
     mean_classes = []
     for k in range(gc+1):
@@ -137,8 +135,8 @@ def quantize(markers):
         mean_classes.append([k,mean_dur])
     #    order_classes.append(k)
 
-    #print "means of normalized classes:"
-    #print mean_classes
+    #print ("means of normalized classes:")
+    #print (mean_classes)
 
     #print "means as fractions:"
     #for i in range(len(mean_classes)):
@@ -246,7 +244,7 @@ def quantize(markers):
                 break
         solutions.append(slist)
 
-    #print solutions
+    #print (solutions)
 
     # create all combinations of possible durations per class
     #print "there are ", len(solutions), " duration classes"
@@ -257,8 +255,9 @@ def quantize(markers):
             contrib.append(m[0])
         slist.append(contrib)
 
+    #print(slist)
     clist =  list_combinations(slist)
-
+    #print(clist)
     #map clist to normalized duration classes: norm_durclasses via order_classes
     dlist = []
     #qdebug2 = False
@@ -268,6 +267,7 @@ def quantize(markers):
         for k in order_classes:
             d.append(c[k])
             s = s + c[k]
+            # print(d, s)
         #if (qdebug2):
         #    dlist.append(d)
         #else: # possible performance enhancement
@@ -277,8 +277,8 @@ def quantize(markers):
             #print d, s
             s = 0.
 
-    #print len(dlist)
-
+    # print len(dlist)
+    #print(dlist)
     orig = []
     for k in norm_durclasses:
         orig.append(k[1])
@@ -299,23 +299,21 @@ def quantize(markers):
 
     return reslist
 
+def q_process (i1_, ternary_, offset_, numversions_, threshold_):
+    # profiler = cProfile.Profile()
+    # profiler.enable()
 
-
-def q_process (i1_, ternary_, offset_, numversions_):
-    # print("THIS IS q_process TERNARY", ternary_)
     global onsetsA
-    debug = 0
+
     i2 = i1_ + offset_
     windowres = []
-    strict = 1
     
-    # bpm = 0.
     onset_list = []
     for k in range(numversions_):
         i2 = i2 + 1
         # print (i1_, ":", i2, " : ", onsetsA[i1_:i2])
         if (len(onsetsA[i1_:i2]) > 1):
-            onset_list.append([i2-1, onsetsA[i1_:i2]])
+            onset_list.append([i2-1, onsetsA[i1_:i2], ternary_, threshold_])
 
     with concurrent.futures.ProcessPoolExecutor() as executor:
         results = executor.map(quantize, onset_list)
@@ -323,7 +321,7 @@ def q_process (i1_, ternary_, offset_, numversions_):
             for l in result_:
                 windowres.append(l)
 
-    if (debug):
+    if (False):
         for k in windowres:
             t = transcribe(k[0], ternary_)
             print ("result: ", k, t)
@@ -352,9 +350,10 @@ def q_process (i1_, ternary_, offset_, numversions_):
     for k in weighted_results:
         t = transcribe(k[0], ternary_)
         #print snmr_string(t), k[1], " n = ", k[2], " next downbeat is at = ", onsetsA[k[2]]
-        
+        # print(t)
         #bpatterns could be a third argument for find_pattern()
-        p = find_pattern(t,strict)
+        # p = find_pattern(t,strict)
+        p = find_pattern_strict(t)
         if p:
             oneres = []
             oneres.append(snmr_string(t))
@@ -369,25 +368,27 @@ def q_process (i1_, ternary_, offset_, numversions_):
             score_results.append (oneres)
 
 ### Nov 14 2025 if no match with patterns found, use first quantization
-    if (False):
-        if (len(score_results) == 0):
-            k = weighted_results[0]
-            # print(k[0])
-            t = transcribe(k[0], ternary_)
-            # print(t)
-            # print(snmr_string(t))
-            oneres = []
-            oneres.append(snmr_string(t))
-            oneres.append(k[1])
-            oneres.append(k[2])
-            oneres.append(downbeat_time (onsetsA, k[2]))
-            oneres.append(list(t))
-            oneres.append(k[3])
-            oneres.append(k[4])
-            #print snmr_string(t), k[1], " n = ", k[2], " next downbeat is at = ", downbeat_time (onsetsA, k[2])
-            #print "found: ", p, " euclid. dist.: ", k[3], " bpm: ", k[4]
-            score_results.append (oneres)
+    # if (False):
+    #     if (len(score_results) == 0):
+    #         k = weighted_results[0]
+    #         # print(k[0])
+    #         t = transcribe(k[0], ternary_)
+    #         # print(t)
+    #         # print(snmr_string(t))
+    #         oneres = []
+    #         oneres.append(snmr_string(t))
+    #         oneres.append(k[1])
+    #         oneres.append(k[2])
+    #         oneres.append(downbeat_time (onsetsA, k[2]))
+    #         oneres.append(list(t))
+    #         oneres.append(k[3])
+    #         oneres.append(k[4])
+    #         #print snmr_string(t), k[1], " n = ", k[2], " next downbeat is at = ", downbeat_time (onsetsA, k[2])
+    #         #print "found: ", p, " euclid. dist.: ", k[3], " bpm: ", k[4]
+    #         score_results.append (oneres)
 
+    # profiler.disable()
+    # profiler.dump_stats(f"profile_worker_{i1_}.prof")
     return len(score_results), score_results
 #
 # collect all n, downbeat_time, and 'found' p from main program
@@ -404,11 +405,7 @@ def q_process (i1_, ternary_, offset_, numversions_):
 
 #++++++++++++++++ main program +++++++++++++++++++++++++++++++
 def main ():
-    # globals because of executor.map(quantize, onset_list)
-    # not passing more arguments
-    global threshold
-    global ternary
-
+    
     #<filename>     <threshold>         start> 
     # onsets        for dur classes     1st onset on downbeat
     #<bpm> <ternary>    <offset>           <range> 
@@ -433,7 +430,7 @@ def main ():
     #print (pat_catalog.keys())
     #print (pat_catalog.values())
 
-    set_patterns(cat_pattern)
+    set_patterns(cat_pattern) # sets variable bpatterns defined in pattern.py
 
     # only if we wanted to compare data with previous analysis output (t_analysis.txt)
     #recallB = []
@@ -445,13 +442,13 @@ def main ():
     #            lform.append (y)
     #        recallB.append(lform)
 
-    # onsetsA = [] WHY GLOBAL?
-
     # the onset file, one value per line
     with open(filename) as f:
         for line in f:
             #one onset time in seconds per line
-            onsetsA.append(float(line))
+            if not('#' in line): # lines starting with # ignored 
+                onsetsA.append(float(line))
+
 
     start = time.perf_counter()
 
@@ -466,12 +463,11 @@ def main ():
     barnumber = 1
     accum_time = 0.
 
-    # analysis loop q_process runs multiple threads
+    # analysis loop q_process runs multiple processes inside
     while True:
-        lenres, q_results = q_process (i1, ternary, offset, numversions)
-
-        print ("------------------------------")
-        print ("results found:")
+        lenres, q_results = q_process (i1, ternary, offset, numversions, threshold)
+        # print ("------------------------------")
+        # print ("results found:")
         # print(q_results)
         ########################
         ######## new idea: see line 523 below 
@@ -492,10 +488,10 @@ def main ():
                 q.append(q[5] * (math.fabs (1. - q[7])) / len(q[4])) # modification
                 q.append(math.fabs (1. - q[7]))
                 # the longer the found pattern the more fit the result
-                print (q[0], q[1], " n = ", q[2], " next downbeat is at = ", q[3])
-                print ("found: ", q[4], " euclid. dist.: ", q[5], " bpm: ", q[6])
-                print (" bpm: ", q[6], " bpmratio: ", q[7], " prevbpm: ", q[8], " fitness: ", q[9])
-                print ("bpm change: ", q[10])
+                # print (q[0], q[1], " n = ", q[2], " next downbeat is at = ", q[3])
+                # print ("found: ", q[4], " euclid. dist.: ", q[5], " bpm: ", q[6])
+                # print (" bpm: ", q[6], " bpmratio: ", q[7], " prevbpm: ", q[8], " fitness: ", q[9])
+                # print ("bpm change: ", q[10])
 
 ################ Dec 11: q[2] and q[3] of selected result to be used to make predictopn about the next bars' downbeats
         #use sort for efficiency: .sort(key=lambda x: x[5])
@@ -577,11 +573,12 @@ def main ():
         ## 1-bar period := 60./prevbpm * 4 (if binary) or * 3 (if ternary)
             future_ones = []
             cur_one = onsetsA[i1] #i1 is an index into the global onset list, i.e. the current beat one
+            pfac = [1,2,3]
             if (ternary):
-                future_ones = [(x)*(60./qr[6]*3)+cur_one for x in range(4)]
+                future_ones = [(x)*(60./qr[6]*3)+cur_one for x in pfac]
             else:
-                future_ones = [(x)*(60./qr[6]*4)+cur_one for x in range(4)]
-            # future_ones[1] and future_ones[2] constitutes a prediction
+                future_ones = [(x)*(60./qr[6]*4)+cur_one for x in pfac]
+            # future_ones[0] and future_ones[1] constitute a prediction
             # of the time-frame of the next bar, which is going to be tried for quantization
             # with q_process
             anafile.write (str(future_ones)) 
@@ -590,8 +587,8 @@ def main ():
             n_onsets = transcribe_back(qr[4], ternary)
             
             for k in n_onsets:
-                newonsets.write (str(k))
-                newonsets.write ("\t")
+                # newonsets.write (str(k))
+                # newonsets.write ("\t")
                 newonsets.write (str(accum_time))
                 accum_time += k
                 newonsets.write ("\n")

@@ -12,4 +12,12 @@ def expwin(n):
         win.append(m.exp(-(val*val)))
     return win
 
+# def expwin(n):
+#     win = []
+#     step = 4./n
+#     for k in range(n+1):
+#         val = -2. + k*step
+#         win.append(m.exp(-(val*val)))
+#     return win
+
 #print expwin(128)

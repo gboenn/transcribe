@@ -3,6 +3,7 @@
 # See license.txt in the transcribe distribution
 
 from catalog import *
+from typing import Optional
 
 def remove_dups (reslist):
     return list (dict.fromkeys(reslist))
@@ -17,9 +18,10 @@ def flatten_list (input_list):
 #--------------------------------------------------------------------------------
 
 pat_catalog = {
+    'bits_12' : bits_12,
         'tha3' : tha3,
     'tha2' : tha2,
-    'tha': tha,
+    'tha1': tha1,
     'bach_prel_1_gould': bach_prel_1_gould,
     'amen': amen,
     'impeach': impeach,
@@ -60,8 +62,10 @@ bpatterns = bach_prel_1_gould
 
 def set_patterns (p):
     global bpatterns
-    bpatterns = pat_catalog[p]
-    print ("set_patterns", bpatterns)
+    patterns = pat_catalog[p]
+    # print ("set_patterns", bpatterns)
+    # Build the lookup structure once
+    bpatterns = {tuple(pat) for pat in patterns}
 
 #--------------------------------------------------------------------------------
 
@@ -77,11 +81,15 @@ def find_pattern (s, strict):
             return b
     return ""
 
-def find_pattern_strict (s):
-    for b in bpatterns:
-        if (s == list(b)):
-            return b
-    return ""
+# def find_pattern_strict (s):
+#     for b in bpatterns:
+#         if (s == b):
+#             return b
+#     return ""
+
+def find_pattern_strict (s: list[str]) -> Optional[tuple]:
+    key = tuple(s)
+    return key if key in bpatterns else None
 
 def beat_align_test (d):
     accum = [0.]
@@ -133,6 +141,44 @@ def beat_align_test2 (d):
     # print (iacc, weight)
     return weight
 
+def float_compare (t, expect, tol):
+    return (abs(t - expect) <= tol)
+
+def beat_align_test_binary (d):
+    accum = [0.]
+    weight = 0.
+    for t in d:
+        last = accum[-1]
+        accum.append (t+last)
+
+    for t in accum:
+        if (float_compare(t, 0., 0.000001)):
+            weight += 1
+        elif (float_compare(t, 0.333333, 0.000001)):
+            weight += .25
+        elif (float_compare(t, 0.666666, 0.000001)):
+            weight += .25
+        elif (float_compare(t, 0.125, 0.000001)):
+            weight += .25
+        elif (float_compare(t, 0.375, 0.000001)):
+            weight += .25
+        elif (float_compare(t, 0.375, 0.000001)):
+            weight += .25
+        elif (float_compare(t, 0.625, 0.000001)):
+            weight += .25
+        elif (float_compare(t, 0.875, 0.000001)):
+            weight += .25
+        elif (float_compare(t, 0.5, 0.000001)):
+            weight += 1.
+        elif (float_compare(t, 0.25, 0.000001)):
+            weight += 1.
+        elif (float_compare(t, 0.75, 0.000001)):
+            weight += 1.
+        elif (float_compare(t, 0.833333, 0.000001)):
+            weight += .25
+        elif (float_compare(t, 0.166666, 0.000001)):
+            weight += .25
+    return weight
 
 def beat_align_test3 (d):
     accum = [0.]
